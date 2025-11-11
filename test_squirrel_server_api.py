@@ -162,6 +162,42 @@ def describe_SquirrelServer_API():
             # verify
             assert response.status_code == 404
 
+    def describe_PUT_squirrels_id_bad_request_validation():
+        """Tests for 400 Bad Request when incomplete data is provided for updates"""
+        
+        def it_returns_400_when_name_is_missing_on_update():
+            # setup
+            requests.post(f"{BASE_URL}/squirrels", data={"name": "Original", "size": "small"})
+            
+            # exercise
+            response = requests.put(f"{BASE_URL}/squirrels/1", data={"size": "large"})
+            
+            # verify
+            assert response.status_code == 400
+
+        def it_returns_400_when_size_is_missing_on_update():
+            # setup
+            requests.post(f"{BASE_URL}/squirrels", data={"name": "Original", "size": "small"})
+            
+            # exercise
+            response = requests.put(f"{BASE_URL}/squirrels/1", data={"name": "Updated"})
+            
+            # verify
+            assert response.status_code == 400
+
+        def it_does_not_update_squirrel_when_data_is_incomplete():
+            # setup
+            requests.post(f"{BASE_URL}/squirrels", data={"name": "Original", "size": "small"})
+            
+            # exercise
+            requests.put(f"{BASE_URL}/squirrels/1", data={"name": "Updated"})
+            
+            # verify - squirrel should remain unchanged
+            response = requests.get(f"{BASE_URL}/squirrels/1")
+            squirrel = response.json()
+            assert squirrel["name"] == "Original"
+            assert squirrel["size"] == "small"
+
     def describe_POST_squirrels():
         
         def it_returns_201_status_code():
@@ -190,6 +226,48 @@ def describe_SquirrelServer_API():
             squirrels = response.json()
             assert len(squirrels) == 1
             assert squirrels[0]["name"] == "ListSquirrel"
+
+    def describe_POST_squirrels_bad_request_validation():
+        """Tests for 400 Bad Request when incomplete data is provided"""
+        
+        def it_returns_400_when_name_is_missing():
+            # exercise
+            response = requests.post(f"{BASE_URL}/squirrels", data={"size": "large"})
+            
+            # verify
+            assert response.status_code == 400
+
+        def it_returns_400_when_size_is_missing():
+            # exercise
+            response = requests.post(f"{BASE_URL}/squirrels", data={"name": "Fluffy"})
+            
+            # verify
+            assert response.status_code == 400
+
+        def it_returns_400_when_both_name_and_size_are_missing():
+            # exercise
+            response = requests.post(f"{BASE_URL}/squirrels", data={})
+            
+            # verify
+            assert response.status_code == 400
+
+        def it_does_not_create_squirrel_when_name_is_missing():
+            # exercise
+            requests.post(f"{BASE_URL}/squirrels", data={"size": "medium"})
+            
+            # verify - check that no squirrel was created
+            response = requests.get(f"{BASE_URL}/squirrels")
+            squirrels = response.json()
+            assert len(squirrels) == 0
+
+        def it_does_not_create_squirrel_when_size_is_missing():
+            # exercise
+            requests.post(f"{BASE_URL}/squirrels", data={"name": "Chippy"})
+            
+            # verify - check that no squirrel was created
+            response = requests.get(f"{BASE_URL}/squirrels")
+            squirrels = response.json()
+            assert len(squirrels) == 0
 
     def describe_PUT_squirrels_id():
         
