@@ -1,0 +1,62 @@
+name: Run System Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-describe requests
+
+      - name: Create database schema
+        run: |
+          python -c "
+          import sqlite3
+          conn = sqlite3.connect('squirrel_db.db')
+          cursor = conn.cursor()
+          cursor.execute('''
+              CREATE TABLE IF NOT EXISTS squirrels (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  name TEXT NOT NULL,
+                  size TEXT NOT NULL
+              )
+          ''')
+          conn.commit()
+          conn.close()
+          print('Database created successfully')
+          "
+
+      - name: Start squirrel server in background
+        run: |
+          python squirrel_server.py &
+          sleep 3
+          echo "Server started"
+
+      - name: Test server is running
+        run: |
+          curl -s http://127.0.0.1:8080/squirrels || echo "Server may not be ready yet"
+
+      - name: Run squirrel server API tests
+        run: |
+          pytest test_squirrel_server_api.py -v
+
+      - name: Run MyDB unit tests
+        run: |
+          pytest test_mydb.py -v
