@@ -60,3 +60,7 @@ jobs:
       - name: Run MyDB unit tests
         run: |
           pytest test_mydb.py -v
+
+      - name: Run squirrel server API tests
+        run: |
+          pytest test_squirrel_server_api.py -v -k "not bad_request_validation"
